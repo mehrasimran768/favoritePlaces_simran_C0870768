@@ -8,8 +8,10 @@
 import Foundation
 import UIKit
 import MapKit
+import CoreLocation
 
-class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
+class mapViewVC :UIViewController, CLLocationManagerDelegate{
+
     @IBOutlet weak var map: MKMapView!
     
     @IBOutlet weak var zoomIn: UIButton!
@@ -18,14 +20,17 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
     
     @IBOutlet weak var search: UITextField!
     
+    @IBOutlet weak var display: UILabel!
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var locationManager: CLLocationManager!
     var destination1: CLLocationCoordinate2D!
     let geocoder = CLGeocoder()
+    var selectedAnnotation: MKPointAnnotation?
     var pinnedAnnotations: Int = 0
-    
+    var delegate: ViewController?
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+        
         locationManager = CLLocationManager()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -33,34 +38,40 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
         locationManager.startUpdatingLocation()
         map.delegate = self
         map.isZoomEnabled = false
-        singleTap()
+        
         doubletap()
+      
     }
     
     @IBAction func searchAddress(_ sender: UIButton) {
-            //searchAddress()
-            let address = search.text!
-                let searchRequest = MKLocalSearch.Request()
-                searchRequest.naturalLanguageQuery = address
-                let activeSearch = MKLocalSearch(request: searchRequest)
-            activeSearch.start { [self] (response, error) in
-                    if error == nil {
-                        let coordinates = response?.boundingRegion.center
-                        let lat = coordinates?.latitude
-                        let lon = coordinates?.longitude
-                        let location = CLLocationCoordinate2D(latitude: lat!, longitude: lon!)
-                        self.displayLocation(latitude: lat!, longitude: lon!)
-                        let annotationCity = city(title: "", coordinate: location)
-                        self.map.addAnnotation(annotationCity)
-                  
-                    }
-                    else {
-                        print(error?.localizedDescription ?? "Error")
-                    }
-                }
-            
+        //searchAddress()
+        let address = search.text!
+        
+        search.resignFirstResponder()
+        let searchTerm = search.text!
+        
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = searchTerm
+        request.region = map.region
+        
+        let search = MKLocalSearch(request: request)
+        search.start { (response, error) in
+            if error != nil {
+                print("Error: \(error?.localizedDescription ?? "Unknown error")")
+            } else if response?.mapItems.count == 0 {
+                print("No results found")
+            } else {
+                let firstResult = response!.mapItems[0]
+                let annotation = MKPointAnnotation()
+                annotation.coordinate = firstResult.placemark.coordinate
+                annotation.title = firstResult.name
+                self.map.addAnnotation(annotation)
+                self.map.showAnnotations([annotation], animated: true)
+            }
         }
-
+    }
+    
+    
     //for zooming In
     @IBAction func zoomIn(_ sender: Any) {
         let span = MKCoordinateSpan(latitudeDelta: map.region.span.latitudeDelta*0.5, longitudeDelta: map.region.span.longitudeDelta*0.5)
@@ -78,40 +89,40 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
     }
     // display user location
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-            
-            let userLocation = locations[0]
-            
-            let latitude = userLocation.coordinate.latitude
-            let longitude = userLocation.coordinate.longitude
-            
-            
-            displayLocation(latitude: latitude, longitude: longitude)
-        }
         
-        func displayLocation(latitude: CLLocationDegrees, longitude: CLLocationDegrees){
-            
-            //DEFINE SPAN
-            let latdelta: CLLocationDegrees = 0.05
-            let lngdelta: CLLocationDegrees = 0.05
-            
-            let span = MKCoordinateSpan(latitudeDelta: latdelta, longitudeDelta: lngdelta)
-            
-            
-            //DEFINE LOCATION
-            let location = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-            
-            
-            //DEFINE REGION
-            let region = MKCoordinateRegion(center: location, span: span)
-            
-            
-            //SET REGION ON MAP
-            map.setRegion(region, animated: true)
-            
-        }
+        let userLocation = locations[0]
+        
+        let latitude = userLocation.coordinate.latitude
+        let longitude = userLocation.coordinate.longitude
+        
+        
+        displayLocation(latitude: latitude, longitude: longitude)
+    }
+    
+    func displayLocation(latitude: CLLocationDegrees, longitude: CLLocationDegrees){
+        
+        //DEFINE SPAN
+        let latdelta: CLLocationDegrees = 0.05
+        let lngdelta: CLLocationDegrees = 0.05
+        
+        let span = MKCoordinateSpan(latitudeDelta: latdelta, longitudeDelta: lngdelta)
+        
+        
+        //DEFINE LOCATION
+        let location = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        
+        
+        //DEFINE REGION
+        let region = MKCoordinateRegion(center: location, span: span)
+        
+        
+        //SET REGION ON MAP
+        map.setRegion(region, animated: true)
+        
+    }
     
     
- 
+    
     //adding an annotation
     @objc func dropPin(sender: UITapGestureRecognizer){
         
@@ -137,6 +148,7 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
                             if self.pinnedAnnotations < 1 {
                                 
                                 self.map.addAnnotation(place)
+                                self.addToFavorites(annotation: MKPointAnnotation())
                             }
                             
                         }
@@ -147,14 +159,57 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
         })
         
     }
-    
-    func singleTap(){
-        let single = UITapGestureRecognizer(target: self, action: #selector(dropPin))
-        single.numberOfTapsRequired = 1
-        map.addGestureRecognizer(single)
+    @objc func addToFavorites(annotation: MKPointAnnotation) {
+            let location = CLLocation(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude)
+            CLGeocoder().reverseGeocodeLocation(location) { (placemarks, error) in
+                if error != nil {
+                    print(error!)
+                } else {
+                    if let placemark = placemarks?[0] {
+                        annotation.title = placemark.name
+                        self.map.addAnnotation(annotation)
+                    }
+                }
+            }
+        }
+    func getAddress(for location: CLLocationCoordinate2D) -> String? {
+        let geocoder = CLGeocoder()
+        var address: String?
+        geocoder.reverseGeocodeLocation(CLLocation(latitude: location.latitude, longitude: location.longitude)) { (placemarks, error) in
+            if error == nil {
+                if let placemark = placemarks?.first {
+                    address = self.getFormattedAddress(from: placemark)
+                }
+            } else {
+                print("Error getting address: \(error!)")
+            }
+        }
+        return address
     }
+    func getFormattedAddress(from placemark: CLPlacemark) -> String {
+        var address = ""
+        if let street = placemark.thoroughfare {
+            address += street + ", "
+        }
+        if let city = placemark.locality {
+            address += city + ", "
+        }
+        if let state = placemark.administrativeArea {
+            address += state + " "
+        }
+        if let postalCode = placemark.postalCode {
+            address += postalCode + ", "
+        }
+        if let country = placemark.country {
+            address += country
+        }
+        print(address)
+        return address
+        
+    }
+ //dropping a pin
     func doubletap(){
-        let double = UITapGestureRecognizer(target: self, action: #selector(removePin))
+        let double = UITapGestureRecognizer(target: self, action: #selector(dropPin))
         double.numberOfTapsRequired = 2
         map.addGestureRecognizer(double)
     }
@@ -180,59 +235,41 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate, MKMapViewDelegate{
         })
     }
 }
+
 //configure the appearence of overlays
-    extension ViewController: MKMapViewDelegate {
+extension mapViewVC: MKMapViewDelegate {
+    
+    
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard annotation is MKPointAnnotation else { return nil }
         
-                
-      
-
-                func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-                    if overlay is MKCircle {
-                        let rendrer = MKCircleRenderer(overlay: overlay)
-                        rendrer.fillColor = UIColor.black.withAlphaComponent(0.5)
-                        rendrer.strokeColor = UIColor.green
-                        rendrer.lineWidth = 2
-                        return rendrer
-                    } else if overlay is MKPolyline {
-                        let rendrer1 = MKPolylineRenderer(overlay: overlay)
-                        rendrer1.strokeColor = UIColor.blue
-                        rendrer1.lineWidth = 3
-                        return rendrer1
-                    }
-                    else if overlay is MKPolygon {
-                        let rendrer = MKPolygonRenderer(overlay: overlay)
-                        rendrer.fillColor = UIColor.red.withAlphaComponent(0.6)
-                        rendrer.strokeColor = UIColor.green
-                        rendrer.lineWidth = 2
-                        return rendrer}
-                    
-                    return MKOverlayRenderer()
-                }
-            //callout Accessory views
-        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-               guard let annotation = annotation as? city else { return nil }
-
-               let identifier = "marker"
-               var view: MKMarkerAnnotationView
-               if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-                 as? MKMarkerAnnotationView {
-                   dequeuedView.annotation = annotation
-                   view = dequeuedView
-               } else {
-                   view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                   view.canShowCallout = true
-                   view.calloutOffset = CGPoint(x: -5, y: 5)
-                   view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
-               }
-               //print(locationManager.location)
-//               if let currentLocation = locationManager.location {
-//                   let distance = currentLocation.distance(from: CLLocation(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude))
-//                   let distanceinkms = round(distance * 0.001)
-//                   view.detailCalloutAccessoryView = UILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 30))
-//                   (view.detailCalloutAccessoryView as! UILabel).text = "\(distanceinkms) kms away from your location"
-//               }
-               return view
-           }
+        let identifier = "Annotation"
+        var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+        
+        if annotationView == nil {
+            annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            annotationView?.canShowCallout = true
+            let btn = UIButton(type: .detailDisclosure)
+            annotationView?.rightCalloutAccessoryView = btn
+        } else {
+            annotationView?.annotation = annotation
+        }
+        return annotationView
+    }
+    
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        if control == view.rightCalloutAccessoryView {
+            let alert = UIAlertController(title: "Add to favorites", message: "Do you want to add this location to your favorites?", preferredStyle: .alert)
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+            alert.addAction(cancelAction)
+            self.selectedAnnotation = view.annotation as? MKPointAnnotation
+            let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+                let address = self?.getAddress(for: view.annotation!.coordinate)
+                UserDefaults.standard.set(address, forKey: "favorite_address")
+                self?.navigationController?.popViewController(animated: true)
             }
-
-
+            alert.addAction(saveAction)
+            present(alert, animated: true, completion: nil)
+        }
+    }
+}

@@ -6,10 +6,10 @@
 //
 
 import UIKit
-
+import CoreData
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    private var models = [Place]()
+    private var models = [String]()
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return models.count
     }
@@ -17,19 +17,30 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let model = models[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        //cell.textLabel?.text = Place.name
+        
         return cell
     }
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration?
-        {
-            let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (action, view, handler) in
-                print("Delete Action Tapped")
-            }
-            deleteAction.image = UIImage(systemName: "trash")?.withTintColor(.red)
-            deleteAction.backgroundColor = .red
-            let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
-            return configuration
-        }
+    //    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    //            let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (action, view, handler) in
+    //                let model = self.models[indexPath.row]
+    //                self.deleteItem(item: model)
+    //                self.models.remove(at: indexPath.row)
+    //                tableView.deleteRows(at: [indexPath], with: .fade)
+    //            }
+    //            deleteAction.image = UIImage(systemName: "trash")?.withTintColor(.red)
+    //            deleteAction.backgroundColor = .red
+    //
+    //            let editAction = UIContextualAction(style: .normal, title: "Edit") { (action, view, handler) in
+    //                let model = self.models[indexPath.row]
+    //              // self.updateItem(item: model, newName:model )
+    //            }
+    //            editAction.image = UIImage(systemName: "pencil")?.withTintColor(.blue)
+    //            editAction.backgroundColor = .blue
+    //
+    //            let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction])
+    //            return configuration
+    //        }
+    
     @IBOutlet weak var favouritePlaces: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,7 +49,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         favouritePlaces.dataSource = self
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(didTapAdd))
-        // Do any additional setup after loading the view.
+        // getAllItems() // fetching data from CoreData
     }
     
     @objc private func didTapAdd(){
@@ -47,60 +58,92 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "second" {
             guard let vc = segue.destination as? mapViewVC else { return }
-           
+            vc.delegate = self
         }
     }
-    // core data
-//    func getAllItems(){
-//        do{
-//            Place = try context.fetch(Place.fetchRequest())
-//            DispatchQueue.main.async {
-//                self.tableView.reloadData()
-//            }
-//
-//
-//        }
-//        catch{
-//            //error
-//        }
-//    }
-//    func createItem(name:String){
-//        let newitem = Place(context: context)
-//        newitem.name = name
-//        newitem.country = country
-//        self.models.append(newitem)
-//        do{
-//            try context.save()
-//            getAllItems()
-//        }
-//        catch{
-//            //error
-//        }
-//    }
-//
-    func deleteItem(item : Place){
-        context.delete(item)
-        do{
-            try context.save( )
-        }
-        catch{
-            //error
-        }
-    }
+    // Core Data methods
+    //    func getAllItems(){
+    //        do{
+    //            models = try context.fetch(Place.fetchRequest())
+    //            DispatchQueue.main.async {
+    //                self.favouritePlaces.reloadData()
+    //            }
+    //        }
+    //        catch{
+    //            //error
+    //            print(error)
+    //        }
+    //    }
+    //
+    //    func createItem(name:String, country:String ,longitude:Decimal, latitude:Decimal, city:String){
+    //        let newitem = Place(context: context)
+    //        newitem.name = name
+    //        newitem.country = country
+    //        newitem.latitude = (latitude) as NSDecimalNumber
+    //        newitem.longitude = (longitude) as NSDecimalNumber
+    //        newitem.city = city
+    //        models.append(newitem)
+    //        do{
+    //            try context.save()
+    //            getAllItems()
+    //        }
+    //        catch{
+    //            //error
+    //            print(error)
+    //        }
+    //    }
+    //
+    //    func deleteItem(item : Place){
+    //        context.delete(item)
+    //        do{
+    //            try context.save()
+    //        }
+    //        catch{
+    //            //error
+    //            print(error)
+    //        }
+    //    }
+    //
+    //    func updateItem(item : Place){
+    //        let alert = UIAlertController(title: "Edit Place", message: "Enter the new name of the place:", preferredStyle: .alert)
+    //        alert.addTextField { (textField) in
+    //        textField.text = item.name
+    //        }
+    //        let updateAction = UIAlertAction(title: "Update", style: .default) { (action) in
+    //        let newName = alert.textFields![0].text!
+    //        self.updateItem(item: item, newName: newName)
+    //        self.getAllItems()
+    //        }
+    //        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+    //        alert.addAction(updateAction)
+    //        alert.addAction(cancelAction)
+    //        present(alert, animated: true, completion: nil)
+    //        }
+    //
+    //        func updateItem(item : Place, newName : String){
+    //            item.name = newName
+    //            do{
+    //                try context.save()
+    //            }
+    //            catch{
+    //                //error
+    //                print(error)
+    //            }
+    //        }
+    //        }
+    //
+    //        // Implementing delegate methods
+    ////        extension ViewController: mapViewVCDelegate {
+    ////        func didAddPlace(name: String, country: String) {
+    ////        createItem(name: name, country: country)
+    ////        }
+    ////        }
+    //
+    //
     
-    func updateItem(item : Place, newName : String){
-        item.name = newName
-        do{
-            try context.save( )
-        }
-        catch{
-            //error
-        }
-    }
     
 }
 
 
 
-
-
+    
