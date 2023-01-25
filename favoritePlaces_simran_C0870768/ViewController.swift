@@ -22,7 +22,21 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         return cell
     }
-    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration?
+        {
+            let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (action, view, handler) in
+                print("Delete Action Tapped")
+               
+            }
+            deleteAction.image = UIImage(systemName: "trash")?.withTintColor(.red)
+            deleteAction.backgroundColor = .red
+//            models.remove(at: indexPath.row)
+//            favouritePlaces.deleteRows(at: [indexPath], with: .fade)
+            let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+            return configuration
+           
+            
+        }
     @IBOutlet weak var favouritePlaces: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()

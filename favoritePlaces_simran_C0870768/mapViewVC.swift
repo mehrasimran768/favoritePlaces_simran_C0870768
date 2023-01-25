@@ -121,8 +121,6 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate{
         
     }
     
-    
-    
     //adding an annotation
     @objc func dropPin(sender: UITapGestureRecognizer){
         
@@ -174,17 +172,17 @@ class mapViewVC :UIViewController, CLLocationManagerDelegate{
         }
     func getAddress(for location: CLLocationCoordinate2D) -> String? {
         let geocoder = CLGeocoder()
-        var address: String?
+        var model: String?
         geocoder.reverseGeocodeLocation(CLLocation(latitude: location.latitude, longitude: location.longitude)) { (placemarks, error) in
             if error == nil {
                 if let placemark = placemarks?.first {
-                    address = self.getFormattedAddress(from: placemark)
+                    model = self.getFormattedAddress(from: placemark)
                 }
             } else {
                 print("Error getting address: \(error!)")
             }
         }
-        return address
+        return model
     }
     func getFormattedAddress(from placemark: CLPlacemark) -> String {
         var address = ""
