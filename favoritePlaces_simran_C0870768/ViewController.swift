@@ -9,7 +9,7 @@ import UIKit
 import CoreData
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    private var models = [String]()
+    private var models = [Place]()
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return models.count
     }
@@ -62,76 +62,76 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }
     }
     // Core Data methods
-    //    func getAllItems(){
-    //        do{
-    //            models = try context.fetch(Place.fetchRequest())
-    //            DispatchQueue.main.async {
-    //                self.favouritePlaces.reloadData()
-    //            }
-    //        }
-    //        catch{
-    //            //error
-    //            print(error)
-    //        }
-    //    }
-    //
-    //    func createItem(name:String, country:String ,longitude:Decimal, latitude:Decimal, city:String){
-    //        let newitem = Place(context: context)
-    //        newitem.name = name
-    //        newitem.country = country
-    //        newitem.latitude = (latitude) as NSDecimalNumber
-    //        newitem.longitude = (longitude) as NSDecimalNumber
-    //        newitem.city = city
-    //        models.append(newitem)
-    //        do{
-    //            try context.save()
-    //            getAllItems()
-    //        }
-    //        catch{
-    //            //error
-    //            print(error)
-    //        }
-    //    }
-    //
-    //    func deleteItem(item : Place){
-    //        context.delete(item)
-    //        do{
-    //            try context.save()
-    //        }
-    //        catch{
-    //            //error
-    //            print(error)
-    //        }
-    //    }
-    //
-    //    func updateItem(item : Place){
-    //        let alert = UIAlertController(title: "Edit Place", message: "Enter the new name of the place:", preferredStyle: .alert)
-    //        alert.addTextField { (textField) in
-    //        textField.text = item.name
-    //        }
-    //        let updateAction = UIAlertAction(title: "Update", style: .default) { (action) in
-    //        let newName = alert.textFields![0].text!
-    //        self.updateItem(item: item, newName: newName)
-    //        self.getAllItems()
-    //        }
-    //        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-    //        alert.addAction(updateAction)
-    //        alert.addAction(cancelAction)
-    //        present(alert, animated: true, completion: nil)
-    //        }
-    //
-    //        func updateItem(item : Place, newName : String){
-    //            item.name = newName
-    //            do{
-    //                try context.save()
-    //            }
-    //            catch{
-    //                //error
-    //                print(error)
-    //            }
-    //        }
-    //        }
-    //
+        func getAllItems(){
+            do{
+                models = try context.fetch(Place.fetchRequest())
+                DispatchQueue.main.async {
+                    self.favouritePlaces.reloadData()
+                }
+            }
+            catch{
+                //error
+                print(error)
+            }
+        }
+    
+        func createItem(name:String, country:String ,longitude:Decimal, latitude:Decimal, city:String){
+            let newitem = Place(context: context)
+            newitem.name = name
+            newitem.country = country
+            newitem.latitude = (latitude) as NSDecimalNumber
+            newitem.longitude = (longitude) as NSDecimalNumber
+            newitem.city = city
+            models.append(newitem)
+            do{
+                try context.save()
+                getAllItems()
+            }
+            catch{
+                //error
+                print(error)
+            }
+        }
+    
+        func deleteItem(item : Place){
+            context.delete(item)
+            do{
+                try context.save()
+            }
+            catch{
+                //error
+                print(error)
+            }
+        }
+    
+        func updateItem(item : Place){
+            let alert = UIAlertController(title: "Edit Place", message: "Enter the new name of the place:", preferredStyle: .alert)
+            alert.addTextField { (textField) in
+            textField.text = item.name
+            }
+            let updateAction = UIAlertAction(title: "Update", style: .default) { (action) in
+            let newName = alert.textFields![0].text!
+            self.updateItem(item: item, newName: newName)
+            self.getAllItems()
+            }
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+            alert.addAction(updateAction)
+            alert.addAction(cancelAction)
+            present(alert, animated: true, completion: nil)
+            }
+    
+            func updateItem(item : Place, newName : String){
+                item.name = newName
+                do{
+                    try context.save()
+                }
+                catch{
+                    //error
+                    print(error)
+                }
+            }
+            }
+    
     //        // Implementing delegate methods
     ////        extension ViewController: mapViewVCDelegate {
     ////        func didAddPlace(name: String, country: String) {
@@ -142,7 +142,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     //
     
     
-}
 
 
 

@@ -265,7 +265,6 @@ extension mapViewVC: MKMapViewDelegate {
             self.selectedAnnotation = view.annotation as? MKPointAnnotation
             let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
                 let address = self?.getAddress(for: view.annotation!.coordinate)
-                UserDefaults.standard.set(address, forKey: "favorite_address")
                 self?.navigationController?.popViewController(animated: true)
             }
             alert.addAction(saveAction)
